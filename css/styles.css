@@ -1,0 +1,188 @@
+/* css/styles.css */
+:root {
+  --color-bg: #faf9f7;
+  --color-surface: #ffffff;
+  --color-text: #1a1a1a;
+  --color-text-muted: #6b6b6b;
+  --color-accent: #2f6f4f;
+  --color-accent-contrast: #ffffff;
+  --color-border: #e5e2dc;
+  --color-error: #c0392b;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 40px;
+  --max-width: 480px;
+  --transicion: 250ms ease;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.app {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+}
+
+.app__header {
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--color-border);
+  z-index: 5;
+}
+
+.progreso {
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progreso__barra {
+  height: 100%;
+  width: 0%;
+  background: var(--color-accent);
+  border-radius: 999px;
+  transition: width var(--transicion);
+}
+
+.progreso__texto {
+  margin: var(--spacing-sm) 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.app__contenido {
+  flex: 1;
+  padding: var(--spacing-lg) var(--spacing-md);
+  animation: aparecer var(--transicion);
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.app__nav {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border-top: 1px solid var(--color-border);
+}
+
+.btn {
+  flex: 1;
+  padding: 14px var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn--primario {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.btn--secundario {
+  background: var(--color-bg);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+}
+
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.campo { margin-bottom: var(--spacing-lg); }
+
+.campo__etiqueta {
+  display: block;
+  font-weight: 600;
+  margin-bottom: var(--spacing-sm);
+}
+
+.campo__error {
+  color: var(--color-error);
+  font-size: 13px;
+  margin-top: var(--spacing-sm);
+}
+
+.campo input[type="number"],
+.campo textarea {
+  width: 100%;
+  padding: 12px var(--spacing-md);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.campo textarea { min-height: 80px; resize: vertical; }
+
+.escala { display: flex; flex-wrap: wrap; gap: var(--spacing-sm); }
+
+.escala__opcion {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 120ms ease, background var(--transicion), color var(--transicion);
+}
+
+.escala__opcion.is-seleccionada {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-color: var(--color-accent);
+  transform: scale(1.05);
+}
+
+.opciones { display: flex; flex-wrap: wrap; gap: var(--spacing-sm); }
+
+.opciones__boton {
+  padding: 10px var(--spacing-md);
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
+}
+
+.opciones__boton.is-seleccionada {
+  background: var(--color-accent);
+  color: var(--color-accent-contrast);
+  border-color: var(--color-accent);
+}
+
+.pantalla-centrada {
+  text-align: center;
+  padding-top: var(--spacing-xl);
+}
+
+.pantalla-centrada h1 { margin-bottom: var(--spacing-sm); }
+.pantalla-centrada p { color: var(--color-text-muted); }
