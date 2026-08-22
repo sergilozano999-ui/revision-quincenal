@@ -24,6 +24,8 @@ function obtenerIdsClientesExistentes() {
   return datos.map(function (fila) { return fila[0]; }).filter(function (valor) { return valor !== ''; });
 }
 
+// Scans manually instead of getLastRow(): array formulas in columns E:G
+// keep those cells populated, making getLastRow() unreliable on this tab.
 function obtenerSiguienteFilaClientes_(hoja) {
   var datos = hoja.getRange(2, 1, Math.max(hoja.getMaxRows() - 1, 1), 1).getValues();
   for (var i = 0; i < datos.length; i++) {
