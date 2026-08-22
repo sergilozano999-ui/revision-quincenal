@@ -261,7 +261,6 @@
     renderSeccionActual();
   });
 
-  // Task 15 reemplaza este listener para manejar el envío final.
   elBtnSiguiente.addEventListener('click', function () {
     var seccion = SECTIONS[estado.indiceSeccion];
     var errores = RevisionValidation.validarSeccion(seccion, estado.respuestas);
@@ -272,8 +271,59 @@
     if (estado.indiceSeccion < SECTIONS.length - 1) {
       estado.indiceSeccion += 1;
       renderSeccionActual();
+      return;
     }
+    enviarFormulario();
   });
+
+  function construirPayload() {
+    var payload = Object.assign({ idCliente: estado.idCliente }, estado.respuestas);
+    payload.fotosFrente = estado.fotos.fotosFrente;
+    payload.fotosPerfil = estado.fotos.fotosPerfil;
+    payload.fotosEspalda = estado.fotos.fotosEspalda;
+    return payload;
+  }
+
+  function enviarFormulario() {
+    elBtnSiguiente.disabled = true;
+    elBtnSiguiente.textContent = 'Enviando...';
+    RevisionApi.enviarRevision(URL_API, construirPayload())
+      .then(function () {
+        mostrarConfirmacion();
+      })
+      .catch(function (error) {
+        elBtnSiguiente.disabled = false;
+        elBtnSiguiente.textContent = 'Enviar';
+        mostrarAvisoReintento(error.message);
+      });
+  }
+
+  function mostrarAvisoReintento(mensaje) {
+    var existente = document.getElementById('aviso-reintento');
+    if (existente) existente.remove();
+    var aviso = document.createElement('p');
+    aviso.id = 'aviso-reintento';
+    aviso.className = 'campo__error';
+    aviso.textContent = 'No se pudo enviar tu revisión (' + mensaje + '). Tus respuestas siguen aquí — inténtalo de nuevo.';
+    elContenido.insertBefore(aviso, elContenido.firstChild);
+  }
+
+  function mostrarConfirmacion() {
+    elCabecera.hidden = true;
+    elNavegacion.hidden = true;
+    elContenido.innerHTML = '';
+    var proximaFecha = new Date();
+    proximaFecha.setDate(proximaFecha.getDate() + 14);
+    var textoFecha = proximaFecha.toLocaleDateString('es-ES', { day: 'numeric', month: 'long' });
+
+    var div = document.createElement('div');
+    div.className = 'pantalla-centrada';
+    div.innerHTML =
+      '<h1>¡Gracias, ' + estado.nombreCliente + '! 💪</h1>' +
+      '<p>Tu entrenador revisará esto pronto.</p>' +
+      '<p>Nos vemos en tu próxima revisión, sobre el ' + textoFecha + '.</p>';
+    elContenido.appendChild(div);
+  }
 
   function init() {
     estado.idCliente = obtenerIdDeUrl();
