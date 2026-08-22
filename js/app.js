@@ -102,6 +102,8 @@
       contenedor.appendChild(crearNumeroDOM(campo));
     } else if (campo.tipo === 'texto') {
       contenedor.appendChild(crearTextoDOM(campo));
+    } else if (campo.tipo === 'foto') {
+      contenedor.appendChild(crearFotoDOM(campo));
     }
 
     var error = document.createElement('p');
@@ -174,6 +176,76 @@
       estado.respuestas[campo.id] = textarea.value;
     });
     return textarea;
+  }
+
+  function crearFotoDOM(campo) {
+    var envoltorio = document.createElement('div');
+
+    var input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.capture = 'environment';
+    input.multiple = true;
+
+    var previsualizacion = document.createElement('div');
+    previsualizacion.style.display = 'flex';
+    previsualizacion.style.gap = '8px';
+    previsualizacion.style.flexWrap = 'wrap';
+    previsualizacion.style.marginTop = '8px';
+
+    function repintarPrevisualizacion() {
+      previsualizacion.innerHTML = '';
+      estado.fotos[campo.id].forEach(function (dataUrl, indice) {
+        var miniatura = document.createElement('div');
+        miniatura.style.position = 'relative';
+
+        var img = document.createElement('img');
+        img.src = dataUrl;
+        img.style.width = '72px';
+        img.style.height = '72px';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '8px';
+        miniatura.appendChild(img);
+
+        var borrar = document.createElement('button');
+        borrar.type = 'button';
+        borrar.textContent = '×';
+        borrar.setAttribute('aria-label', 'Quitar foto');
+        borrar.style.position = 'absolute';
+        borrar.style.top = '-6px';
+        borrar.style.right = '-6px';
+        borrar.style.border = 'none';
+        borrar.style.borderRadius = '999px';
+        borrar.style.width = '22px';
+        borrar.style.height = '22px';
+        borrar.style.cursor = 'pointer';
+        borrar.addEventListener('click', function () {
+          estado.fotos[campo.id].splice(indice, 1);
+          repintarPrevisualizacion();
+        });
+        miniatura.appendChild(borrar);
+
+        previsualizacion.appendChild(miniatura);
+      });
+    }
+
+    input.addEventListener('change', function () {
+      var archivos = Array.prototype.slice.call(input.files);
+      Promise.all(archivos.map(function (archivo) { return comprimirImagen(archivo, 1600, 0.8); }))
+        .then(function (dataUrls) {
+          estado.fotos[campo.id] = estado.fotos[campo.id].concat(dataUrls);
+          repintarPrevisualizacion();
+          input.value = '';
+        })
+        .catch(function () {
+          alert('No se pudo procesar alguna foto. Inténtalo de nuevo.');
+        });
+    });
+
+    envoltorio.appendChild(input);
+    envoltorio.appendChild(previsualizacion);
+    repintarPrevisualizacion();
+    return envoltorio;
   }
 
   function mostrarErroresSeccion(errores) {
