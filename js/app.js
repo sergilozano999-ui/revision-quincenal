@@ -1,6 +1,6 @@
 // js/app.js
 (function () {
-  var URL_API = 'PON_AQUI_LA_URL_DE_TU_WEB_APP'; // Task 16 la reemplaza por la URL real
+  var URL_API = 'https://script.google.com/macros/s/AKfycbxCfq2Ll69VmLS_IJKRGxufGLZXGR20DyiC-kv0LLUrfQRD-W5zVzgrc4c0HFkZOzMlaQ/exec';
 
   var estado = {
     idCliente: null,
