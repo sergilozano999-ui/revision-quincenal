@@ -59,7 +59,28 @@ function doPost(e) {
     grasaCorporalPct !== null ? grasaCorporalPct : '',
   ]);
 
+  enviarMensajeMotivacionalAlEntrenador_(cliente, payload, comparacionPeso, grasaCorporalPct);
+
   return respuestaJson_({ status: 'ok', numeroRevision: numeroRevision });
+}
+
+// Manda al entrenador un mensaje ya redactado (según cómo le haya ido al
+// cliente) listo para copiar y pegar donde quiera enviárselo (WhatsApp, etc).
+function enviarMensajeMotivacionalAlEntrenador_(cliente, payload, comparacionPeso, grasaCorporalPct) {
+  var mensaje = generarMensajeMotivacional({
+    nombre: cliente.nombre,
+    comparacionVisual: payload.comparacionVisual,
+    entrenamientosPrevistos: payload.entrenamientosPrevistos,
+    entrenamientosCompletados: payload.entrenamientosCompletados,
+    diferenciaPeso: comparacionPeso.diferencia,
+    grasaCorporalPct: grasaCorporalPct,
+  });
+
+  MailApp.sendEmail({
+    to: Session.getEffectiveUser().getEmail(),
+    subject: 'Mensaje listo para ' + cliente.nombre,
+    body: 'Cópialo y pégalo donde quieras mandárselo:\n\n' + mensaje,
+  });
 }
 
 function guardarFotos_(payload, cliente, fecha, numeroRevision) {

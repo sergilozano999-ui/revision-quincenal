@@ -8,6 +8,7 @@ function onOpen() {
     .addItem('📈 Ver progreso de clientes', 'verProgreso_')
     .addItem('🛠️ Completar sexo/altura de clientes', 'completarDatosClientes_')
     .addItem('🔍 Comprobar emails de clientes', 'comprobarEmailsClientes_')
+    .addItem('🗄️ Activar copia de seguridad semanal', 'activarBackupSemanal_')
     .addToUi();
 }
 
