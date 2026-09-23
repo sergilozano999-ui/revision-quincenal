@@ -81,6 +81,14 @@ function configurarTablaProgreso_(hoja) {
   var formula = '=IFERROR(QUERY(Respuestas!A:AN;'
     + '"select A, F, P, O, AN where D = \'"&B1&"\' order by A";1);"")';
   hoja.getRange('A4').setFormula(formula);
+
+  // Sin esto, la fecha que devuelve QUERY puede mostrarse como el número de
+  // serie interno (ej. "46280") en vez de una fecha legible, y el gráfico de
+  // líneas no la interpreta bien como eje de tiempo.
+  hoja.getRange(4, 1, FILA_MAX_PROGRESO - 3, 1).setNumberFormat('dd/mm/yyyy');
+  hoja.getRange(4, 2, FILA_MAX_PROGRESO - 3, 1).setNumberFormat('0.0');
+  hoja.getRange(4, 3, FILA_MAX_PROGRESO - 3, 2).setNumberFormat('0');
+  hoja.getRange(4, 5, FILA_MAX_PROGRESO - 3, 1).setNumberFormat('0.0');
 }
 
 function configurarGraficosProgreso_(hoja) {

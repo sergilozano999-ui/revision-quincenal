@@ -19,6 +19,7 @@ function enviarAvisosPago() {
   var cabecera = datos[0];
   var idxProximoPago = obtenerIndiceColumna_(hoja, COL_PROXIMO_PAGO);
   obtenerIndiceColumna_(hoja, COL_PAGADO);
+  var idxEmailCliente = obtenerIndiceColumnaEmail_(hoja);
   var hoy = new Date();
   var emailPropietario = Session.getEffectiveUser().getEmail();
 
@@ -29,15 +30,28 @@ function enviarAvisosPago() {
     var proximoPago = fila[idxProximoPago];
     if (!idCliente || !faltanDiasParaPago(proximoPago, hoy, DIAS_AVISO_PAGO)) continue;
 
+    var fechaTexto = Utilities.formatDate(proximoPago, Session.getScriptTimeZone(), 'dd/MM/yyyy');
+
     MailApp.sendEmail({
       to: emailPropietario,
       subject: 'Aviso: pago pendiente de ' + nombre,
       body:
-        nombre + ' tiene el próximo pago programado para el ' +
-        Utilities.formatDate(proximoPago, Session.getScriptTimeZone(), 'dd/MM/yyyy') +
+        nombre + ' tiene el próximo pago programado para el ' + fechaTexto +
         ' (dentro de ' + DIAS_AVISO_PAGO + ' días).\n\n' +
         'Cuando lo cobres, marca "Sí" en la columna Pagado de ese cliente y la próxima fecha se actualizará sola.'
     });
+
+    var emailCliente = idxEmailCliente !== -1 ? fila[idxEmailCliente] : '';
+    if (emailCliente) {
+      MailApp.sendEmail({
+        to: emailCliente,
+        subject: 'Recordatorio: tu próximo pago',
+        body:
+          'Hola ' + nombre + ',\n\n' +
+          'Este es un recordatorio de que tu próximo pago está previsto para el ' + fechaTexto +
+          '.\n\nCualquier duda, contacta con tu entrenador.\n\n¡Gracias!'
+      });
+    }
   }
 }
 
