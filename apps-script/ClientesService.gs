@@ -1,6 +1,7 @@
 // apps-script/ClientesService.gs
 var COL_SEXO = 'Sexo';
 var COL_ALTURA_CM = 'Altura_cm';
+var COL_OBJETIVO = 'Objetivo';
 
 function obtenerHojaClientes_() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_ID_CLIENTES);

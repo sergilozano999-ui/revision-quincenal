@@ -12,6 +12,26 @@ function onOpen() {
     .addToUi();
 }
 
+// Pregunta el objetivo principal del cliente (perder grasa / ganar músculo /
+// mantenimiento) con un número en vez de texto libre, para evitar erratas
+// que luego no coincidan al mostrarlo en la hoja Progreso. Devuelve null si
+// el usuario cancela (para poder distinguirlo de "lo dejó en blanco").
+function pedirObjetivo_(ui, titulo) {
+  var respuesta = ui.prompt(
+    titulo,
+    'Objetivo principal:\n1 = Perder grasa\n2 = Ganar músculo\n3 = Mantenimiento\n\n' +
+      'Escribe el número (o déjalo en blanco si no lo sabes ahora):',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (respuesta.getSelectedButton() !== ui.Button.OK) return null;
+
+  var texto = respuesta.getResponseText().trim();
+  if (texto === '1') return 'Perder grasa';
+  if (texto === '2') return 'Ganar músculo';
+  if (texto === '3') return 'Mantenimiento';
+  return '';
+}
+
 function crearNuevoCliente() {
   var ui = SpreadsheetApp.getUi();
   var respuesta = ui.prompt('Nuevo cliente', 'Nombre del cliente:', ui.ButtonSet.OK_CANCEL);
@@ -42,6 +62,9 @@ function crearNuevoCliente() {
   var alturaTexto = respuestaAltura.getResponseText().trim();
   var alturaCm = alturaTexto ? Number(alturaTexto) : '';
 
+  var objetivo = pedirObjetivo_(ui, 'Nuevo cliente');
+  if (objetivo === null) return;
+
   var idsExistentes = obtenerIdsClientesExistentes();
   var idCliente = generarIdUnico(idsExistentes);
   var enlace = URL_BASE_FRONTEND + '?id=' + idCliente;
@@ -60,6 +83,10 @@ function crearNuevoCliente() {
   if (alturaCm) {
     var idxAltura = obtenerIndiceColumna_(hoja, COL_ALTURA_CM);
     hoja.getRange(fila, idxAltura + 1).setValue(alturaCm);
+  }
+  if (objetivo) {
+    var idxObjetivo = obtenerIndiceColumna_(hoja, COL_OBJETIVO);
+    hoja.getRange(fila, idxObjetivo + 1).setValue(objetivo);
   }
 
   ui.alert('Cliente creado', nombre + '\n\nEnlace personal:\n' + enlace, ui.ButtonSet.OK);
@@ -193,6 +220,7 @@ function completarDatosClientesInterno_(ui) {
   var hoja = obtenerHojaClientes_();
   var idxSexo = obtenerIndiceColumna_(hoja, COL_SEXO);
   var idxAltura = obtenerIndiceColumna_(hoja, COL_ALTURA_CM);
+  var idxObjetivo = obtenerIndiceColumna_(hoja, COL_OBJETIVO);
   var datos = hoja.getDataRange().getValues();
 
   var completados = 0;
@@ -202,7 +230,7 @@ function completarDatosClientesInterno_(ui) {
     var idCliente = datos[i][0];
     var nombre = datos[i][1];
     if (!idCliente) continue;
-    if (datos[i][idxSexo] && datos[i][idxAltura]) continue;
+    if (datos[i][idxSexo] && datos[i][idxAltura] && datos[i][idxObjetivo]) continue;
 
     var respuestaSexo = ui.alert(
       'Datos de ' + nombre,
@@ -226,9 +254,18 @@ function completarDatosClientesInterno_(ui) {
     }
     var alturaTexto = respuestaAltura.getResponseText().trim();
 
+    var objetivo = pedirObjetivo_(ui, 'Datos de ' + nombre);
+    if (objetivo === null) {
+      saltados++;
+      continue;
+    }
+
     hoja.getRange(i + 1, idxSexo + 1).setValue(sexo);
     if (alturaTexto) {
       hoja.getRange(i + 1, idxAltura + 1).setValue(Number(alturaTexto));
+    }
+    if (objetivo) {
+      hoja.getRange(i + 1, idxObjetivo + 1).setValue(objetivo);
     }
     completados++;
   }
