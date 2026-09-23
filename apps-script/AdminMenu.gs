@@ -7,6 +7,7 @@ function onOpen() {
     .addItem('💶 Avisos de pago', 'avisosPago_')
     .addItem('📈 Ver progreso de clientes', 'verProgreso_')
     .addItem('🛠️ Completar sexo/altura de clientes', 'completarDatosClientes_')
+    .addItem('🔍 Comprobar emails de clientes', 'comprobarEmailsClientes_')
     .addToUi();
 }
 
