@@ -5,6 +5,9 @@
       titulo: 'Progreso físico',
       campos: [
         { id: 'pesoKg', tipo: 'numero', etiqueta: 'Peso actual (kg)', obligatorio: true, min: 30, max: 300, paso: 0.1 },
+        { id: 'cuelloCm', tipo: 'numero', etiqueta: 'Contorno de cuello (cm) — justo debajo de la nuez, cinta recta', obligatorio: true, min: 20, max: 60, paso: 0.1 },
+        { id: 'cinturaCm', tipo: 'numero', etiqueta: 'Contorno de cintura (cm) — a la altura del ombligo', obligatorio: true, min: 40, max: 200, paso: 0.1 },
+        { id: 'caderaCm', tipo: 'numero', etiqueta: 'Contorno de cadera (cm) — en el punto más ancho', obligatorio: true, dependeDe: { campo: 'sexo', igualA: 'Mujer' }, min: 60, max: 200, paso: 0.1 },
         { id: 'valoracionProgresoFisico', tipo: 'escala', etiqueta: '¿Cómo valoras tu progreso físico estas últimas 2 semanas?', obligatorio: true },
         { id: 'comparacionVisual', tipo: 'opciones', etiqueta: '¿Cómo te ves físicamente respecto a la última revisión?', obligatorio: true, opciones: ['Mejor', 'Igual', 'Peor'] },
         { id: 'fotosFrente', tipo: 'foto', etiqueta: 'Foto de frente', obligatorio: false },

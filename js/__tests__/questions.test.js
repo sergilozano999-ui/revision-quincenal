@@ -32,18 +32,23 @@ test('los campos de tipo opciones declaran al menos 2 opciones', () => {
   }
 });
 
-test('dependeDe siempre apunta a un id de campo existente', () => {
+// 'sexo' no es un campo del cuestionario: app.js lo inyecta en estado.respuestas
+// a partir del perfil del cliente (endpoint /validar), para mostrar/ocultar
+// caderaCm sin que el cliente tenga que responderlo cada vez.
+const IDS_EXTERNOS = new Set(['sexo']);
+
+test('dependeDe siempre apunta a un id de campo existente o a un id externo conocido', () => {
   const todosLosIds = new Set(SECTIONS.flatMap((s) => s.campos.map((c) => c.id)));
   for (const seccion of SECTIONS) {
     for (const campo of seccion.campos) {
       if (campo.dependeDe) {
-        assert.ok(todosLosIds.has(campo.dependeDe.campo));
+        assert.ok(todosLosIds.has(campo.dependeDe.campo) || IDS_EXTERNOS.has(campo.dependeDe.campo));
       }
     }
   }
 });
 
-test('el número total de campos visibles por defecto ronda el máximo acordado (~26)', () => {
+test('el número total de campos visibles por defecto ronda el máximo acordado (~30, incluye medidas de grasa corporal)', () => {
   const total = SECTIONS.flatMap((s) => s.campos).filter((c) => !c.dependeDe).length;
-  assert.ok(total >= 24 && total <= 28, `total inesperado: ${total}`);
+  assert.ok(total >= 24 && total <= 30, `total inesperado: ${total}`);
 });

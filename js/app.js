@@ -337,6 +337,7 @@
           return;
         }
         estado.nombreCliente = resultado.nombre;
+        estado.respuestas.sexo = resultado.sexo || '';
         mostrarBienvenida(resultado.nombre);
       })
       .catch(function () {
