@@ -6,7 +6,7 @@ function doGet(e) {
     if (!cliente) {
       return respuestaJson_({ status: 'error', mensaje: 'Enlace no válido' });
     }
-    return respuestaJson_({ status: 'ok', nombre: cliente.nombre });
+    return respuestaJson_({ status: 'ok', nombre: cliente.nombre, sexo: cliente.sexo || '' });
   }
   return respuestaJson_({ status: 'error', mensaje: 'Acción no reconocida' });
 }
@@ -26,12 +26,18 @@ function doPost(e) {
   if (!cliente) {
     return respuestaJson_({ status: 'error', mensaje: 'Cliente no encontrado' });
   }
+  if (cliente.sexo === 'Mujer' && !payload.caderaCm) {
+    return respuestaJson_({ status: 'error', mensaje: 'Falta la medida de cadera' });
+  }
 
   var filasPrevias = obtenerFilasClienteRespuestas(payload.idCliente);
   var numeroRevision = calcularNumeroRevision(filasPrevias);
   var comparacionPeso = calcularComparacionPeso(payload.pesoKg, filasPrevias);
   var fecha = new Date();
   var urlsFotos = guardarFotos_(payload, cliente, fecha, numeroRevision);
+  var grasaCorporalPct = calcularGrasaCorporal(
+    cliente.sexo, cliente.alturaCm, payload.cuelloCm, payload.cinturaCm, payload.caderaCm
+  );
 
   obtenerHojaRespuestas_().appendRow([
     fecha, fecha, payload.idCliente, cliente.nombre, numeroRevision,
@@ -49,6 +55,8 @@ function doPost(e) {
     payload.mejorLogro || '', payload.mayorDificultad || '',
     payload.necesidadEntrenador || '', payload.comentarioAdicional || '',
     payload.objetivoProximasSemanas || '', payload.mejoraEspecifica || '',
+    payload.cuelloCm, payload.cinturaCm, payload.caderaCm || '',
+    grasaCorporalPct !== null ? grasaCorporalPct : '',
   ]);
 
   return respuestaJson_({ status: 'ok', numeroRevision: numeroRevision });

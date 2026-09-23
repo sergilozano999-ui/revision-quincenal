@@ -4,6 +4,8 @@ function onOpen() {
     .createMenu('Revisión Quincenal')
     .addItem('➕ Nuevo cliente', 'crearNuevoCliente')
     .addItem('🔧 Configurar recordatorios por email', 'configurarRecordatorios_')
+    .addItem('💶 Avisos de pago', 'avisosPago_')
+    .addItem('📈 Ver progreso de clientes', 'verProgreso_')
     .addToUi();
 }
 
@@ -22,6 +24,21 @@ function crearNuevoCliente() {
   if (respuestaEmail.getSelectedButton() !== ui.Button.OK) return;
   var email = respuestaEmail.getResponseText().trim();
 
+  // Sexo y altura hacen falta para calcular el % de grasa corporal
+  // (fórmula US Navy) a partir de las medidas que el cliente meta en cada
+  // revisión.
+  var respuestaSexo = ui.alert('Nuevo cliente', '¿Es una clienta (mujer)?', ui.ButtonSet.YES_NO);
+  var sexo = respuestaSexo === ui.Button.YES ? 'Mujer' : 'Hombre';
+
+  var respuestaAltura = ui.prompt(
+    'Nuevo cliente',
+    'Altura en cm (para calcular el % de grasa corporal; déjalo en blanco si no lo sabes ahora):',
+    ui.ButtonSet.OK_CANCEL
+  );
+  if (respuestaAltura.getSelectedButton() !== ui.Button.OK) return;
+  var alturaTexto = respuestaAltura.getResponseText().trim();
+  var alturaCm = alturaTexto ? Number(alturaTexto) : '';
+
   var idsExistentes = obtenerIdsClientesExistentes();
   var idCliente = generarIdUnico(idsExistentes);
   var enlace = URL_BASE_FRONTEND + '?id=' + idCliente;
@@ -33,6 +50,13 @@ function crearNuevoCliente() {
   if (email) {
     var idxEmail = obtenerIndiceColumnaEmail_(hoja);
     hoja.getRange(fila, idxEmail + 1).setValue(email);
+  }
+
+  var idxSexo = obtenerIndiceColumna_(hoja, COL_SEXO);
+  hoja.getRange(fila, idxSexo + 1).setValue(sexo);
+  if (alturaCm) {
+    var idxAltura = obtenerIndiceColumna_(hoja, COL_ALTURA_CM);
+    hoja.getRange(fila, idxAltura + 1).setValue(alturaCm);
   }
 
   ui.alert('Cliente creado', nombre + '\n\nEnlace personal:\n' + enlace, ui.ButtonSet.OK);
@@ -76,6 +100,66 @@ function configurarRecordatoriosInterno_(ui) {
   ui.alert(
     'Recordatorios configurados',
     'Se ha activado el envío diario (~20:30) y te he mandado un correo de prueba a ' + emailPropietario + '.',
+    ui.ButtonSet.OK
+  );
+}
+
+// Único botón para pagos: activa el aviso diario si no lo estaba, y manda
+// SIEMPRE un correo con el estado real (activado o no, columnas encontradas,
+// y la fecha/estado de cada cliente). Idempotente, se puede pulsar varias veces.
+function avisosPago_() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    avisosPagoInterno_(ui);
+  } catch (e) {
+    ui.alert('Fallo en avisos de pago', String(e && e.message || e), ui.ButtonSet.OK);
+    throw e;
+  }
+}
+
+function avisosPagoInterno_(ui) {
+  var hoja = obtenerHojaClientes_();
+  obtenerIndiceColumna_(hoja, COL_PROXIMO_PAGO);
+  obtenerIndiceColumna_(hoja, COL_PAGADO);
+
+  var triggersExistentes = ScriptApp.getProjectTriggers().filter(function (t) {
+    return t.getHandlerFunction() === 'enviarAvisosPago';
+  });
+  if (triggersExistentes.length === 0) {
+    ScriptApp.newTrigger('enviarAvisosPago').timeBased().everyDays(1).atHour(20).nearMinute(30).create();
+  }
+
+  var datos = hoja.getDataRange().getValues();
+  var cabecera = datos[0];
+  var idxProximoPago = cabecera.indexOf(COL_PROXIMO_PAGO);
+  var idxPagado = cabecera.indexOf(COL_PAGADO);
+
+  var lineas = [];
+  for (var i = 1; i < datos.length; i++) {
+    var fila = datos[i];
+    if (!fila[0]) continue;
+    var fecha = idxProximoPago !== -1 ? fila[idxProximoPago] : '';
+    var fechaTexto = fecha instanceof Date
+      ? Utilities.formatDate(fecha, Session.getScriptTimeZone(), 'dd/MM/yyyy')
+      : '(sin fecha puesta)';
+    var pagado = idxPagado !== -1 ? fila[idxPagado] || 'No' : 'No';
+    lineas.push('- ' + fila[1] + ': próximo pago ' + fechaTexto + ' | Pagado: ' + pagado);
+  }
+
+  var emailPropietario = Session.getEffectiveUser().getEmail();
+  MailApp.sendEmail({
+    to: emailPropietario,
+    subject: 'AVISOS DE PAGO: resultado de la comprobación',
+    body:
+      'Aviso diario automático: ACTIVADO ✅\n\n' +
+      'Columnas encontradas en la fila 1 de la hoja Clientes:\n' + cabecera.join(' | ') + '\n\n' +
+      'Clientes y su próximo pago:\n' +
+      (lineas.length ? lineas.join('\n') : '(no hay clientes con datos todavía)')
+  });
+
+  ui.alert(
+    'Avisos de pago',
+    'Te he mandado un correo a ' + emailPropietario + ' con el resultado. Busca el asunto "AVISOS DE PAGO: resultado de la comprobación".',
     ui.ButtonSet.OK
   );
 }

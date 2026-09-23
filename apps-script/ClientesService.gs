@@ -1,4 +1,7 @@
 // apps-script/ClientesService.gs
+var COL_SEXO = 'Sexo';
+var COL_ALTURA_CM = 'Altura_cm';
+
 function obtenerHojaClientes_() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_ID_CLIENTES);
 }
@@ -10,9 +13,17 @@ function obtenerHojaRespuestas_() {
 function buscarClientePorId(idCliente) {
   var hoja = obtenerHojaClientes_();
   var datos = hoja.getDataRange().getValues();
+  var cabecera = datos[0];
+  var idxSexo = cabecera.indexOf(COL_SEXO);
+  var idxAltura = cabecera.indexOf(COL_ALTURA_CM);
   for (var i = 1; i < datos.length; i++) {
     if (datos[i][0] === idCliente) {
-      return { idCliente: datos[i][0], nombre: datos[i][1] };
+      return {
+        idCliente: datos[i][0],
+        nombre: datos[i][1],
+        sexo: idxSexo !== -1 ? datos[i][idxSexo] : '',
+        alturaCm: idxAltura !== -1 ? datos[i][idxAltura] : '',
+      };
     }
   }
   return null;

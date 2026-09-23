@@ -6,6 +6,8 @@ function payloadValido(sobrescribir) {
   return Object.assign({
     idCliente: 'ABC12345',
     pesoKg: 80,
+    cuelloCm: 38,
+    cinturaCm: 85,
     valoracionProgresoFisico: 8,
     comparacionVisual: 'Mejor',
     entrenamientosPrevistos: 6,

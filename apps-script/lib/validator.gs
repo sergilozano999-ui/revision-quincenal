@@ -2,7 +2,7 @@
 // dos runtimes separados sin build compartido, así que la lista de campos
 // obligatorios vive una vez en cada lado.
 var CAMPOS_OBLIGATORIOS = [
-  'idCliente', 'pesoKg', 'valoracionProgresoFisico', 'comparacionVisual',
+  'idCliente', 'pesoKg', 'cuelloCm', 'cinturaCm', 'valoracionProgresoFisico', 'comparacionVisual',
   'entrenamientosPrevistos', 'entrenamientosCompletados', 'valoracionEntrenamiento',
   'progresoRendimiento', 'molestias', 'cumplimientoNutricion', 'nivelHambre',
   'dificultadPrincipal', 'pasosDiarios', 'objetivoPasosCumplido', 'calidadSueno',
