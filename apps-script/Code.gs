@@ -60,6 +60,7 @@ function doPost(e) {
   ]);
 
   enviarMensajeMotivacionalAlEntrenador_(cliente, payload, comparacionPeso, grasaCorporalPct);
+  generarInformeProgreso_(cliente, fecha, numeroRevision, payload.pesoKg, grasaCorporalPct, urlsFotos.frente);
 
   return respuestaJson_({ status: 'ok', numeroRevision: numeroRevision });
 }

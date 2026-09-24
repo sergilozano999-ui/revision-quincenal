@@ -2,4 +2,5 @@
 !appsscript.json
 !*.gs
 !lib/*.gs
+!*.html
 **/__tests__/**

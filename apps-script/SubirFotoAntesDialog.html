@@ -1,0 +1,42 @@
+<style>
+  body { font-family: Arial, sans-serif; padding: 12px; }
+  label { display: block; margin-top: 12px; font-weight: bold; }
+  select, input[type=file] { width: 100%; margin-top: 4px; box-sizing: border-box; }
+  button { margin-top: 16px; padding: 8px 16px; }
+  #estado { margin-top: 12px; font-style: italic; }
+</style>
+<label>Cliente:
+  <select id="cliente">
+    <? for (var i = 0; i < clientes.length; i++) { ?>
+      <option value="<?= clientes[i].idCliente ?>"><?= clientes[i].nombre ?></option>
+    <? } ?>
+  </select>
+</label>
+<label>Foto "antes":
+  <input type="file" id="foto" accept="image/*">
+</label>
+<button onclick="subir()">Guardar</button>
+<div id="estado"></div>
+<script>
+  function subir() {
+    var idCliente = document.getElementById('cliente').value;
+    var archivo = document.getElementById('foto').files[0];
+    if (!archivo) {
+      document.getElementById('estado').textContent = 'Elige una foto primero.';
+      return;
+    }
+    document.getElementById('estado').textContent = 'Subiendo...';
+    var lector = new FileReader();
+    lector.onload = function () {
+      google.script.run
+        .withSuccessHandler(function () {
+          document.getElementById('estado').textContent = 'Foto guardada correctamente. Ya puedes cerrar esta ventana.';
+        })
+        .withFailureHandler(function (error) {
+          document.getElementById('estado').textContent = 'Fallo: ' + error.message;
+        })
+        .guardarFotoAntesManual_(idCliente, lector.result);
+    };
+    lector.readAsDataURL(archivo);
+  }
+</script>

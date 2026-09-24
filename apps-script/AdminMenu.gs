@@ -6,6 +6,7 @@ function onOpen() {
     .addItem('🔧 Configurar recordatorios por email', 'configurarRecordatorios_')
     .addItem('💶 Avisos de pago', 'avisosPago_')
     .addItem('📈 Ver progreso de clientes', 'verProgreso_')
+    .addItem('📸 Foto "antes" personalizada', 'subirFotoAntesPersonalizada_')
     .addItem('🛠️ Completar sexo/altura de clientes', 'completarDatosClientes_')
     .addItem('🔍 Comprobar emails de clientes', 'comprobarEmailsClientes_')
     .addItem('🗄️ Activar copia de seguridad semanal', 'activarBackupSemanal_')

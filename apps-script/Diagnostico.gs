@@ -87,6 +87,70 @@ function probarMensajeMotivacionalInterno_(ui) {
   );
 }
 
+// Imágenes de prueba (rojo = "antes", azul = "ahora") solo para ver cómo
+// queda el informe PDF sin depender de fotos reales de ningún cliente.
+var FOTO_PRUEBA_ROJA_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAIAAAABc2X6AAAAdElEQVR4nO3PAQkAMAzAsAmbfy7rMg59oAKaObtfNc8PgIGBgYGBgb8JuB5wPeB6wPWA6wHXA64HXA+4HnA94HrA9YDrAdcDrgdcD7gecD3gesD1gOsB1wOuB1wPuB5wPeB6wPWA6wHXA64HXA+4HnA94HoX73xB0isej70AAAAASUVORK5CYII=';
+var FOTO_PRUEBA_AZUL_BASE64 = 'iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAIAAAABc2X6AAAAdUlEQVR4nO3PAQkAIBDAQIOZxMTGMoawP1iA3drnjmp9PwAGBgYGBgYeE3A94HrA9YDrAdcDrgdcD7gecD3gesD1gOsB1wOuB1wPuB5wPeB6wPWA6wHXA64HXA+4HnA94HrA9YDrAdcDrgdcD7gecD3gesD1Hj0eL//JO84GAAAAAElFTkSuQmCC';
+
+// Genera un informe PDF de prueba (con dos imágenes de color liso, roja de
+// "antes" y azul de "ahora", no fotos reales) para que puedas ver cómo
+// queda el diseño y el email antes de confiar en la función con clientes
+// reales. Crea el cliente ZZTEST01 si no existe. Limpiar con
+// "🧹 Limpiar datos de prueba" cuando termines de revisarlo.
+function probarInformeProgreso_() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    probarInformeProgresoInterno_(ui);
+  } catch (e) {
+    ui.alert('Fallo en la prueba', String(e && e.message || e), ui.ButtonSet.OK);
+    throw e;
+  }
+}
+
+function probarInformeProgresoInterno_(ui) {
+  var hoja = obtenerHojaClientes_();
+  var idsExistentes = obtenerIdsClientesExistentes();
+  if (idsExistentes.indexOf(ID_CLIENTE_PRUEBA) === -1) {
+    var fila = obtenerSiguienteFilaClientes_(hoja);
+    hoja.getRange(fila, 1, 1, 4).setValues([[ID_CLIENTE_PRUEBA, 'Cliente de Prueba', new Date(), '']]);
+  }
+
+  var carpetaRaiz = obtenerOCrearCarpeta_(DriveApp.getRootFolder(), CARPETA_FOTOS_RAIZ);
+  var carpetaCliente = obtenerOCrearCarpeta_(carpetaRaiz, ID_CLIENTE_PRUEBA + '_Cliente de Prueba');
+  var archivoRojo = carpetaCliente.createFile(
+    Utilities.newBlob(Utilities.base64Decode(FOTO_PRUEBA_ROJA_BASE64), 'image/png', 'prueba_antes.png')
+  );
+  var archivoAzul = carpetaCliente.createFile(
+    Utilities.newBlob(Utilities.base64Decode(FOTO_PRUEBA_AZUL_BASE64), 'image/png', 'prueba_ahora.png')
+  );
+
+  var idxFotoManual = obtenerIndiceColumna_(hoja, COL_FOTO_ANTES_MANUAL);
+  var datos = hoja.getDataRange().getValues();
+  for (var i = 1; i < datos.length; i++) {
+    if (datos[i][0] === ID_CLIENTE_PRUEBA) {
+      hoja.getRange(i + 1, idxFotoManual + 1).setValue(archivoRojo.getUrl());
+      break;
+    }
+  }
+
+  // Llamamos directo a la versión interna (sin el try/catch que en real
+  // manda un email de aviso) para que, si algo falla, el error salga aquí
+  // mismo en un mensaje en pantalla en vez de tener que ir a mirar el correo.
+  generarInformeProgresoInterno_(
+    { idCliente: ID_CLIENTE_PRUEBA, nombre: 'Cliente de Prueba' },
+    new Date(), 1, 79.5, 18.5, archivoAzul.getUrl()
+  );
+
+  ui.alert(
+    'Informe de prueba enviado',
+    'Revisa tu correo — debería haberte llegado un email con asunto ' +
+      '"Informe de progreso listo: Cliente de Prueba", con un PDF adjunto ' +
+      '(imagen roja = "antes", azul = "ahora", solo para ver el diseño).\n\n' +
+      'Cuando lo hayas revisado, dile a Claude que limpie los datos de prueba.',
+    ui.ButtonSet.OK
+  );
+}
+
 // Borra (clearContent, nunca delete row — ver memoria del proyecto sobre el
 // bug de ARRAYFORMULA de 2026-09-07) los datos del cliente de prueba
 // ZZTEST01 en Clientes y Respuestas, y su carpeta vacía de fotos en Drive.
@@ -122,6 +186,12 @@ function limpiarClientePruebaInterno_(ui) {
   var carpetasCliente = carpetaRaiz.getFoldersByName(ID_CLIENTE_PRUEBA + '_Cliente de Prueba');
   while (carpetasCliente.hasNext()) {
     carpetasCliente.next().setTrashed(true);
+  }
+
+  var carpetaInformes = obtenerOCrearCarpeta_(DriveApp.getRootFolder(), NOMBRE_CARPETA_INFORMES);
+  var archivosInforme = carpetaInformes.getFilesByName('Informe_Cliente de Prueba_Revision1');
+  while (archivosInforme.hasNext()) {
+    archivosInforme.next().setTrashed(true);
   }
 
   ui.alert('Limpieza hecha', 'Los datos de prueba (ZZTEST01) se han borrado. Tu Sheet está como antes.', ui.ButtonSet.OK);
