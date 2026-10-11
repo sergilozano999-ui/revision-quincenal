@@ -63,9 +63,13 @@ function probarMensajeMotivacionalInterno_(ui) {
     hoja.getRange(fila, idxAltura + 1).setValue(178);
   }
 
-  var payload = {
-    idCliente: ID_CLIENTE_PRUEBA,
+  doPost({ postData: { contents: JSON.stringify({
+    idCliente: ID_CLIENTE_PRUEBA, parte: 1,
     pesoKg: 79.5, cuelloCm: 38, cinturaCm: 84,
+  }) } });
+
+  doPost({ postData: { contents: JSON.stringify({
+    idCliente: ID_CLIENTE_PRUEBA, parte: 2,
     valoracionProgresoFisico: 8, comparacionVisual: 'Mejor',
     entrenamientosPrevistos: 8, entrenamientosCompletados: 7,
     valoracionEntrenamiento: 8, progresoRendimiento: 'Sí',
@@ -73,16 +77,114 @@ function probarMensajeMotivacionalInterno_(ui) {
     cumplimientoNutricion: 7, nivelHambre: 5, dificultadPrincipal: 'Nada',
     pasosDiarios: 9000, objetivoPasosCumplido: 'Sí', calidadSueno: 7,
     horasSueno: 7.5, nivelEnergia: 7, nivelEstres: 3,
-  };
-
-  doPost({ postData: { contents: JSON.stringify(payload) } });
+  }) } });
 
   ui.alert(
     'Prueba enviada',
-    'Revisa tu correo — debería haberte llegado un email con asunto ' +
-      '"Mensaje listo para Cliente de Prueba".\n\n' +
-      'El cliente ZZTEST01 es de prueba: cuando confirmes que el email llegó bien, ' +
+    'Revisa tu correo — deberían haberte llegado DOS emails: uno con asunto que empieza ' +
+      '"Parte 1 recibida de Cliente de Prueba" y otro "Mensaje listo para Cliente de Prueba".\n\n' +
+      'El cliente ZZTEST01 es de prueba: cuando confirmes que los emails llegaron bien, ' +
       'dile a Claude que limpie los datos de prueba para dejar el Sheet como estaba.',
+    ui.ButtonSet.OK
+  );
+}
+
+// Comprueba, de principio a fin, el flujo en dos partes para ZZTEST01:
+// 1) antes de la Parte 1, el enlace debe apuntar a la parte 1.
+// 2) tras la Parte 1, debe quedar exactamente una fila pendiente (ni cero
+//    ni dos, incluso si se repite la Parte 1).
+// 3) tras la Parte 1, el enlace debe apuntar ya a la parte 2.
+// 4) la Parte 2 sin una Parte 1 pendiente debe dar error, no romperse.
+// 5) tras la Parte 2, la fila de Respuestas debe llevar en su columna B
+//    (índice 1) la fecha de la Parte 1, no la de la Parte 2.
+function probarRevisionDosPartes_() {
+  var ui = SpreadsheetApp.getUi();
+  try {
+    probarRevisionDosPartesInterno_(ui);
+  } catch (e) {
+    ui.alert('Fallo en la prueba', String(e && e.message || e), ui.ButtonSet.OK);
+    throw e;
+  }
+}
+
+function probarRevisionDosPartesInterno_(ui) {
+  var hoja = obtenerHojaClientes_();
+  var idsExistentes = obtenerIdsClientesExistentes();
+  if (idsExistentes.indexOf(ID_CLIENTE_PRUEBA) === -1) {
+    var fila = obtenerSiguienteFilaClientes_(hoja);
+    hoja.getRange(fila, 1, 1, 4).setValues([[ID_CLIENTE_PRUEBA, 'Cliente de Prueba', new Date(), '']]);
+    var idxSexo = obtenerIndiceColumna_(hoja, COL_SEXO);
+    var idxAltura = obtenerIndiceColumna_(hoja, COL_ALTURA_CM);
+    hoja.getRange(fila, idxSexo + 1).setValue('Hombre');
+    hoja.getRange(fila, idxAltura + 1).setValue(178);
+  }
+
+  var resultados = [];
+
+  function verificar(descripcion, condicion) {
+    resultados.push((condicion ? '✅ ' : '❌ ') + descripcion);
+    if (!condicion) throw new Error('Falló: ' + descripcion);
+  }
+
+  // Parte 2 sin Parte 1 pendiente: debe dar error, no explotar.
+  var respuestaSinPendiente = JSON.parse(doPost({ postData: { contents: JSON.stringify({
+    idCliente: ID_CLIENTE_PRUEBA, parte: 2, valoracionProgresoFisico: 1, comparacionVisual: 'Igual',
+    entrenamientosPrevistos: 1, entrenamientosCompletados: 1, valoracionEntrenamiento: 1,
+    progresoRendimiento: 'Sí', molestias: 'No', cumplimientoNutricion: 1, nivelHambre: 1,
+    dificultadPrincipal: 'Nada', pasosDiarios: 1, objetivoPasosCumplido: 'Sí', calidadSueno: 1,
+    horasSueno: 1, nivelEnergia: 1, nivelEstres: 1,
+  }) } }).getContent());
+  verificar('Parte 2 sin Parte 1 pendiente da error legible', respuestaSinPendiente.status === 'error');
+
+  // Parte 1, dos veces seguidas (simula que el cliente repite fotos/peso):
+  // debe quedar una sola fila pendiente, no dos.
+  doPost({ postData: { contents: JSON.stringify({ idCliente: ID_CLIENTE_PRUEBA, parte: 1, pesoKg: 80, cuelloCm: 38, cinturaCm: 85 }) } });
+  doPost({ postData: { contents: JSON.stringify({ idCliente: ID_CLIENTE_PRUEBA, parte: 1, pesoKg: 79.5, cuelloCm: 38, cinturaCm: 84 }) } });
+  var hojaPendientes = obtenerHojaRespuestasPendientes_();
+  var filasPendientesClientePrueba = hojaPendientes.getDataRange().getValues().filter(function (f) { return f[0] === ID_CLIENTE_PRUEBA; });
+  verificar('Repetir la Parte 1 deja una sola fila pendiente', filasPendientesClientePrueba.length === 1);
+  verificar('La fila pendiente guardó el peso de la segunda Parte 1 (79.5)', filasPendientesClientePrueba[0][3] === 79.5);
+
+  // El enlace ahora debe apuntar a la parte 2.
+  var validacion = JSON.parse(doGet({ parameter: { accion: 'validar', id: ID_CLIENTE_PRUEBA } }).getContent());
+  verificar('Tras la Parte 1, el enlace apunta a la parte 2', validacion.parte === 2);
+
+  var fechaPendienteAntes = filasPendientesClientePrueba[0][1];
+
+  // Parte 2: debe completar la revisión y usar la fecha de la Parte 1 en
+  // la columna B de Respuestas (índice 1), no "ahora".
+  doPost({ postData: { contents: JSON.stringify({
+    idCliente: ID_CLIENTE_PRUEBA, parte: 2,
+    valoracionProgresoFisico: 8, comparacionVisual: 'Mejor',
+    entrenamientosPrevistos: 8, entrenamientosCompletados: 7,
+    valoracionEntrenamiento: 8, progresoRendimiento: 'Sí', molestias: 'No',
+    cumplimientoNutricion: 7, nivelHambre: 5, dificultadPrincipal: 'Nada',
+    pasosDiarios: 9000, objetivoPasosCumplido: 'Sí', calidadSueno: 7,
+    horasSueno: 7.5, nivelEnergia: 7, nivelEstres: 3,
+  }) } });
+
+  var hojaRespuestas = obtenerHojaRespuestas_();
+  var datosRespuestas = hojaRespuestas.getDataRange().getValues();
+  var filaGuardada = null;
+  for (var i = 1; i < datosRespuestas.length; i++) {
+    if (datosRespuestas[i][2] === ID_CLIENTE_PRUEBA) filaGuardada = datosRespuestas[i];
+  }
+  verificar('La Parte 2 guardó una fila en Respuestas', !!filaGuardada);
+  verificar(
+    'La columna B de Respuestas lleva la fecha de la Parte 1, no la de la Parte 2',
+    filaGuardada[1].getTime() === fechaPendienteAntes.getTime()
+  );
+
+  var pendienteTrasParte2 = obtenerFilaPendiente_(ID_CLIENTE_PRUEBA);
+  verificar('Tras la Parte 2, no queda ninguna fila pendiente', pendienteTrasParte2 === null);
+
+  ui.alert(
+    'Prueba de las dos partes: ' + (resultados.every(function (r) { return r.indexOf('✅') === 0; }) ? 'TODO OK' : 'HAY FALLOS'),
+    resultados.join('\n') +
+      '\n\nRevisa tu correo: deberían haberte llegado varios emails ' +
+      '("Parte 1 recibida de Cliente de Prueba...", "Mensaje listo para Cliente de Prueba", ' +
+      '"Informe de progreso listo..."). Cuando confirmes que todo está bien, ' +
+      'dile a Claude que limpie los datos de prueba.',
     ui.ButtonSet.OK
   );
 }
@@ -179,6 +281,14 @@ function limpiarClientePruebaInterno_(ui) {
   for (var j = 1; j < datosRespuestas.length; j++) {
     if (datosRespuestas[j][2] === ID_CLIENTE_PRUEBA) { // columna C = ID_Cliente
       hojaRespuestas.getRange(j + 1, 1, 1, hojaRespuestas.getLastColumn()).clearContent();
+    }
+  }
+
+  var hojaPendientes = obtenerHojaRespuestasPendientes_();
+  var datosPendientes = hojaPendientes.getDataRange().getValues();
+  for (var k = 1; k < datosPendientes.length; k++) {
+    if (datosPendientes[k][0] === ID_CLIENTE_PRUEBA) {
+      hojaPendientes.getRange(k + 1, 1, 1, hojaPendientes.getLastColumn()).clearContent();
     }
   }
 
