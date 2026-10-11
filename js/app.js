@@ -5,6 +5,8 @@
   var estado = {
     idCliente: null,
     nombreCliente: '',
+    parte: 1,
+    secciones: SECTIONS_PARTE1,
     indiceSeccion: 0,
     respuestas: {},
     fotos: { fotosFrente: [], fotosPerfil: [], fotosEspalda: [] },
@@ -37,11 +39,12 @@
     elCabecera.hidden = true;
     elNavegacion.hidden = true;
     elContenido.innerHTML = '';
+    var textoIntro = estado.parte === 2
+      ? '<p>Ya tengo tus fotos, peso y medidas de hoy. Solo quedan un par de preguntas, 2 minutos.</p>'
+      : '<p>Vamos con tu revisión quincenal. Te llevará unos 5 minutos.</p>';
     var div = document.createElement('div');
     div.className = 'pantalla-centrada';
-    div.innerHTML =
-      '<h1>Hola, ' + nombre + ' 👋</h1>' +
-      '<p>Vamos con tu revisión quincenal. Te llevará unos 5 minutos.</p>';
+    div.innerHTML = '<h1>Hola, ' + nombre + ' 👋</h1>' + textoIntro;
     var boton = document.createElement('button');
     boton.type = 'button';
     boton.className = 'btn btn--primario';
@@ -60,14 +63,14 @@
   }
 
   function actualizarProgreso() {
-    var total = SECTIONS.length;
+    var total = estado.secciones.length;
     var actual = estado.indiceSeccion + 1;
     elBarraProgreso.style.width = Math.round((actual / total) * 100) + '%';
     elTextoProgreso.textContent = 'Sección ' + actual + ' de ' + total;
   }
 
   function renderSeccionActual() {
-    var seccion = SECTIONS[estado.indiceSeccion];
+    var seccion = estado.secciones[estado.indiceSeccion];
     actualizarProgreso();
     elContenido.innerHTML = '';
 
@@ -81,7 +84,7 @@
     });
 
     elBtnAtras.disabled = estado.indiceSeccion === 0;
-    elBtnSiguiente.textContent = estado.indiceSeccion === SECTIONS.length - 1 ? 'Enviar' : 'Siguiente';
+    elBtnSiguiente.textContent = estado.indiceSeccion === estado.secciones.length - 1 ? 'Enviar' : 'Siguiente';
   }
 
   // Task 14 añade los casos 'foto'; Task 15 no toca esta función.
@@ -261,13 +264,13 @@
   });
 
   elBtnSiguiente.addEventListener('click', function () {
-    var seccion = SECTIONS[estado.indiceSeccion];
+    var seccion = estado.secciones[estado.indiceSeccion];
     var errores = RevisionValidation.validarSeccion(seccion, estado.respuestas);
     if (Object.keys(errores).length > 0) {
       mostrarErroresSeccion(errores);
       return;
     }
-    if (estado.indiceSeccion < SECTIONS.length - 1) {
+    if (estado.indiceSeccion < estado.secciones.length - 1) {
       estado.indiceSeccion += 1;
       renderSeccionActual();
       return;
@@ -276,7 +279,7 @@
   });
 
   function construirPayload() {
-    var payload = Object.assign({ idCliente: estado.idCliente }, estado.respuestas);
+    var payload = Object.assign({ idCliente: estado.idCliente, parte: estado.parte }, estado.respuestas);
     payload.fotosFrente = estado.fotos.fotosFrente;
     payload.fotosPerfil = estado.fotos.fotosPerfil;
     payload.fotosEspalda = estado.fotos.fotosEspalda;
@@ -288,7 +291,11 @@
     elBtnSiguiente.textContent = 'Enviando...';
     RevisionApi.enviarRevision(URL_API, construirPayload())
       .then(function () {
-        mostrarConfirmacion();
+        if (estado.parte === 1) {
+          mostrarTransicionParte2();
+        } else {
+          mostrarConfirmacion();
+        }
       })
       .catch(function (error) {
         elBtnSiguiente.disabled = false;
@@ -305,6 +312,29 @@
     aviso.className = 'campo__error';
     aviso.textContent = 'No se pudo enviar tu revisión (' + mensaje + '). Tus respuestas siguen aquí — inténtalo de nuevo.';
     elContenido.insertBefore(aviso, elContenido.firstChild);
+  }
+
+  function mostrarTransicionParte2() {
+    estado.parte = 2;
+    estado.secciones = SECTIONS_PARTE2;
+    estado.indiceSeccion = 0;
+    elCabecera.hidden = true;
+    elNavegacion.hidden = true;
+    elContenido.innerHTML = '';
+    var div = document.createElement('div');
+    div.className = 'pantalla-centrada';
+    div.innerHTML =
+      '<h1>¡Gracias! 💪</h1>' +
+      '<p>Ya tengo tu peso, medidas y fotos. Solo quedan un par de preguntas — puedes ' +
+      'hacerlas ahora mismo, o volver más tarde con el mismo enlace.</p>';
+    var boton = document.createElement('button');
+    boton.type = 'button';
+    boton.className = 'btn btn--primario';
+    boton.textContent = 'Seguir ahora';
+    boton.style.marginTop = '24px';
+    boton.addEventListener('click', iniciarCuestionario);
+    div.appendChild(boton);
+    elContenido.appendChild(div);
   }
 
   function mostrarConfirmacion() {
@@ -338,6 +368,8 @@
         }
         estado.nombreCliente = resultado.nombre;
         estado.respuestas.sexo = resultado.sexo || '';
+        estado.parte = resultado.parte === 2 ? 2 : 1;
+        estado.secciones = estado.parte === 2 ? SECTIONS_PARTE2 : SECTIONS_PARTE1;
         mostrarBienvenida(resultado.nombre);
       })
       .catch(function () {
