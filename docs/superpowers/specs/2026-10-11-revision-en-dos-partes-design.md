@@ -123,6 +123,17 @@ simple sin plantilla de generador de mensajes — algo como:
 No reutiliza `generarMensajeMotivacional` porque ese generador necesita
 datos de entrenamientos que solo llegan en la Parte 2.
 
+### Detalle importante: qué fecha queda como "fecha de la revisión"
+
+La fórmula de `Última_Revisión` en "Clientes" (ver memoria del proyecto)
+agrega por la **columna B** de "Respuestas". Hoy columnas A y B llevan el
+mismo valor (`fecha` en el momento del único envío). Al partir en dos
+pasos, columna B debe seguir llevando la fecha en que el cliente se hizo
+las medidas/fotos (Parte 1) — no la fecha en que, horas después, contesta
+las preguntas — para que `Próxima_Revisión` (Última_Revisión + 14 días) se
+siga contando desde el check-in físico real. Columna A pasa a ser el
+momento en que se completó el registro (Parte 2).
+
 ### Frontend
 
 - `questions.js`: las `SECTIONS` se reparten en dos listas —
