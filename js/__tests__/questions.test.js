@@ -52,3 +52,41 @@ test('el número total de campos visibles por defecto ronda el máximo acordado 
   const total = SECTIONS.flatMap((s) => s.campos).filter((c) => !c.dependeDe).length;
   assert.ok(total >= 24 && total <= 30, `total inesperado: ${total}`);
 });
+
+const { SECTIONS: SECTIONS_DE_NUEVO, SECTIONS_PARTE1, SECTIONS_PARTE2 } = require('../questions.js');
+
+const CAMPOS_PARTE1_ESPERADOS = ['pesoKg', 'cuelloCm', 'cinturaCm', 'caderaCm', 'fotosFrente', 'fotosPerfil', 'fotosEspalda'];
+
+test('SECTIONS_PARTE1 tiene una sola sección con solo peso, medidas y fotos', () => {
+  assert.equal(SECTIONS_PARTE1.length, 1);
+  const idsParte1 = SECTIONS_PARTE1[0].campos.map((c) => c.id);
+  assert.deepEqual(idsParte1.slice().sort(), CAMPOS_PARTE1_ESPERADOS.slice().sort());
+});
+
+test('SECTIONS_PARTE2 tiene 6 secciones, la primera con las 3 preguntas de opinión que quedan de "progreso físico"', () => {
+  assert.equal(SECTIONS_PARTE2.length, 6);
+  const idsPrimeraSeccion = SECTIONS_PARTE2[0].campos.map((c) => c.id);
+  assert.deepEqual(
+    idsPrimeraSeccion.slice().sort(),
+    ['valoracionProgresoFisico', 'comparacionVisual', 'comentarioProgresoFisico'].slice().sort()
+  );
+});
+
+test('SECTIONS_PARTE2 conserva sin cambios las 5 secciones que no son "progreso físico"', () => {
+  const seccionesOriginalesRestantes = SECTIONS_DE_NUEVO.filter((s) => s.id !== 'progreso_fisico');
+  const seccionesParte2Restantes = SECTIONS_PARTE2.slice(1);
+  assert.deepEqual(seccionesParte2Restantes, seccionesOriginalesRestantes);
+});
+
+test('entre SECTIONS_PARTE1 y SECTIONS_PARTE2 se reparten todos los campos de "progreso físico" sin solapamiento ni pérdida', () => {
+  const seccionOriginal = SECTIONS_DE_NUEVO.filter((s) => s.id === 'progreso_fisico')[0];
+  const idsOriginales = seccionOriginal.campos.map((c) => c.id).slice().sort();
+
+  const idsParte1 = SECTIONS_PARTE1[0].campos.map((c) => c.id);
+  const idsParte2 = SECTIONS_PARTE2[0].campos.map((c) => c.id);
+  const solapados = idsParte1.filter((id) => idsParte2.includes(id));
+  assert.deepEqual(solapados, []);
+
+  const union = idsParte1.concat(idsParte2).sort();
+  assert.deepEqual(union, idsOriginales);
+});

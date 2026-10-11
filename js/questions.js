@@ -70,9 +70,33 @@
     },
   ];
 
+  var CAMPOS_PARTE1_PROGRESO_FISICO = ['pesoKg', 'cuelloCm', 'cinturaCm', 'caderaCm', 'fotosFrente', 'fotosPerfil', 'fotosEspalda'];
+
+  var SECCION_PROGRESO_FISICO_ORIGINAL = SECTIONS.filter(function (s) { return s.id === 'progreso_fisico'; })[0];
+
+  var SECCION_PROGRESO_FISICO_PARTE1 = Object.assign({}, SECCION_PROGRESO_FISICO_ORIGINAL, {
+    campos: SECCION_PROGRESO_FISICO_ORIGINAL.campos.filter(function (c) {
+      return CAMPOS_PARTE1_PROGRESO_FISICO.indexOf(c.id) !== -1;
+    }),
+  });
+
+  var SECCION_PROGRESO_FISICO_PARTE2 = Object.assign({}, SECCION_PROGRESO_FISICO_ORIGINAL, {
+    campos: SECCION_PROGRESO_FISICO_ORIGINAL.campos.filter(function (c) {
+      return CAMPOS_PARTE1_PROGRESO_FISICO.indexOf(c.id) === -1;
+    }),
+  });
+
+  var SECTIONS_PARTE1 = [SECCION_PROGRESO_FISICO_PARTE1];
+
+  var SECTIONS_PARTE2 = [SECCION_PROGRESO_FISICO_PARTE2].concat(
+    SECTIONS.filter(function (s) { return s.id !== 'progreso_fisico'; })
+  );
+
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { SECTIONS: SECTIONS };
+    module.exports = { SECTIONS: SECTIONS, SECTIONS_PARTE1: SECTIONS_PARTE1, SECTIONS_PARTE2: SECTIONS_PARTE2 };
   } else {
     root.SECTIONS = SECTIONS;
+    root.SECTIONS_PARTE1 = SECTIONS_PARTE1;
+    root.SECTIONS_PARTE2 = SECTIONS_PARTE2;
   }
 })(typeof window !== 'undefined' ? window : globalThis);
