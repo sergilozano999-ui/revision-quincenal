@@ -3,7 +3,7 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Revisión Quincenal')
     .addItem('➕ Nuevo cliente', 'crearNuevoCliente')
-    .addItem('🧪 Probar revisión en dos partes', 'probarRevisionDosPartes_')
+    .addItem('🧹 Limpiar datos de prueba', 'limpiarClientePrueba_')
     .addItem('🔧 Configurar recordatorios por email', 'configurarRecordatorios_')
     .addItem('💶 Avisos de pago', 'avisosPago_')
     .addItem('📈 Ver progreso de clientes', 'verProgreso_')
